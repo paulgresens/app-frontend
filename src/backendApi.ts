@@ -7,6 +7,7 @@ const backend = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
+  validateStatus: () => true,
 });
 
 export default backend;
