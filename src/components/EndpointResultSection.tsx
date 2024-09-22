@@ -17,6 +17,15 @@ const EndpointResultSection = ({
     <div className={twJoin("flex flex-col items-center h-full", className)}>
       <div className="w-2/3 h-full flex flex-col justify-around ">
         {(() => {
+          console.log(fetchedResponse);
+          if (!fetchedResponse) {
+            return;
+          }
+          if (!fetchedResponse.data) {
+            return "LOADING";
+          }
+          console.log(fetchedResponse.data);
+
           switch (title) {
             case ENDPOINT_NAMES.TROLLING_CUSTOMERS:
               return (
@@ -75,10 +84,13 @@ const EndpointResultSection = ({
               return (
                 <ScrollArea className="h-80 overflow-auto">
                   <div className="flex flex-col gap-1 ">
-                    {fetchedResponse?.status === 404 || !fetchedResponse?.data
+                    {fetchedResponse?.status === 404
                       ? "product not found"
                       : (() => {
                           const product = fetchedResponse?.data.product;
+                          if (!product) {
+                            return <></>;
+                          }
                           return (
                             <div className="flex flex-col bg-neutral-800 rounded-sm p-1 mr-4">
                               <div>{`title: ${
@@ -99,7 +111,7 @@ const EndpointResultSection = ({
                                   : "unknown"
                               }`}</div>
                               <div>{`labels: ${
-                                !!product.labels.length
+                                !!product.labels?.length
                                   ? product.labels.join(", ")
                                   : "unknown"
                               }`}</div>
@@ -112,6 +124,51 @@ const EndpointResultSection = ({
                             </div>
                           );
                         })()}
+                  </div>
+                </ScrollArea>
+              );
+            case ENDPOINT_NAMES.BY_PATTERN:
+            case ENDPOINT_NAMES.TOP_PRODUCTS:
+              return (
+                <ScrollArea className="h-80 overflow-auto">
+                  <div className="flex flex-col gap-1 ">
+                    {!fetchedResponse?.data.products?.length
+                      ? "no products found"
+                      : fetchedResponse?.data.products.map((product) => (
+                          <div className="flex flex-col bg-neutral-800 rounded-sm p-1 mr-4">
+                            <div>{`title: ${
+                              !!product.title ? product.title : "unknown"
+                            } `}</div>
+                            <div>{`product number: ${
+                              !!product.productNumber
+                                ? product.productNumber
+                                : "unknown"
+                            } `}</div>
+                            <div>{`sales rank: ${
+                              !!product.salesrank
+                                ? product.salesrank
+                                : "unknown"
+                            } `}</div>
+                          </div>
+                        ))}
+                  </div>
+                </ScrollArea>
+              );
+            case ENDPOINT_NAMES.SIMILAR_CHEAPER_PRODUCTS:
+              return (
+                <ScrollArea className="h-80 overflow-auto">
+                  <div className="flex flex-col gap-1 ">
+                    {fetchedResponse.status === 404
+                      ? "product not found"
+                      : !fetchedResponse?.data.productNumbers?.length
+                      ? "no similar and cheaper products found"
+                      : fetchedResponse?.data.productNumbers.map(
+                          (productNumber) => (
+                            <div className="flex flex-col bg-neutral-800 rounded-sm p-1 mr-4">
+                              <div>{`product number: ${productNumber} `}</div>
+                            </div>
+                          )
+                        )}
                   </div>
                 </ScrollArea>
               );

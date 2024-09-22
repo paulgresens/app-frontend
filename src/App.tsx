@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import EndpointParameterEntrySection from "./components/EndpointParameterEntrySection";
 import EndpointResultSection from "./components/EndpointResultSection";
+import backend from "./backendApi";
 
 export type Paths = {
   [key: string]: {
@@ -15,8 +16,9 @@ export enum ENDPOINT_NAMES {
   TOP_PRODUCTS = "top products",
   SIMILAR_CHEAPER_PRODUCTS = "similar cheaper products",
   PRODUCT_OFFERS = "product offers",
-  CATEGORY_OVERVIEW = "category overview",
   TROLLING_CUSTOMERS = "trolling customers",
+  CATEGORY_TREE = "category tree",
+  REVIEW = "add review",
 }
 export enum HTTPMethods {
   GET = "GET",
@@ -26,48 +28,57 @@ export enum HTTPMethods {
   PATCH = "PATCH",
 }
 
-const paths: Paths = {
+export const paths: Paths = {
   product: {
     title: "Products",
     endpoints: [
       {
         title: ENDPOINT_NAMES.BY_PRODUCT_NUMBER,
         path: "/product/{productNumber}",
-        method: HTTPMethods.GET,
+        method: HTTPMethods.GET, //fertig
       },
       {
         title: ENDPOINT_NAMES.BY_PATTERN,
-        path: "/products/{pattern}",
-        method: HTTPMethods.GET,
+        path: "/product",
+        method: HTTPMethods.GET, //fertig
       },
       {
         title: ENDPOINT_NAMES.BY_PATH,
-        path: "/product/byPath",
-        method: HTTPMethods.GET,
+        path: "/product/path/{path}",
+        method: HTTPMethods.GET, //fertig
       },
       {
         title: ENDPOINT_NAMES.TOP_PRODUCTS,
-        path: "/topProducts/{branch_office}/{limit}",
-        method: HTTPMethods.GET,
+        path: "/product/top",
+        method: HTTPMethods.GET, //fertig
       },
       {
         title: ENDPOINT_NAMES.SIMILAR_CHEAPER_PRODUCTS,
         path: "/{productNumber}/similarCheaper",
-        method: HTTPMethods.GET,
+        method: HTTPMethods.GET, //fertig
       },
       {
         title: ENDPOINT_NAMES.PRODUCT_OFFERS,
         path: "/{productNumber}/offers",
-        method: HTTPMethods.GET,
+        method: HTTPMethods.GET, //fertig
       },
     ],
   },
-  category: { title: "Category", endpoints: [] },
+  category: {
+    title: "Category",
+    endpoints: [
+      {
+        title: ENDPOINT_NAMES.CATEGORY_TREE,
+        path: "/categorytree",
+        method: HTTPMethods.GET, //fertig
+      },
+    ],
+  },
   reviews: {
     title: "Reviews",
     endpoints: [
       {
-        title: ENDPOINT_NAMES.CATEGORY_OVERVIEW,
+        title: ENDPOINT_NAMES.REVIEW,
         path: "/review",
         method: HTTPMethods.POST,
       },
@@ -79,11 +90,13 @@ const paths: Paths = {
       {
         title: ENDPOINT_NAMES.TROLLING_CUSTOMERS,
         path: "/belowRating/{minimumAverageRating}",
-        method: HTTPMethods.GET,
+        method: HTTPMethods.GET, //fertig
       },
     ],
   },
 };
+
+let componentTreeResult = null;
 
 function App() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<
@@ -93,17 +106,33 @@ function App() {
     { data: any; status: number } | undefined
   >(undefined);
 
+  const [componentTree, setComponentTree] = useState();
+
   useEffect(
     () => console.log(JSON.stringify(fetchedResponse)),
     [fetchedResponse]
   );
+
   useEffect(() => {
-    // const fetchMessage = async () => {
-    //   const { data } = await backend.get("/ping");
-    //   setMessage(data ?? "");
-    // };
-    // fetchMessage();
-  });
+    if (componentTreeResult) {
+      setComponentTree(componentTreeResult);
+      return;
+    }
+    const fetchComponentTree = async () => {
+      const response = await backend.get(
+        paths["category"].endpoints.find(
+          (endpoint) => endpoint.title === ENDPOINT_NAMES.CATEGORY_TREE
+        )?.path ?? ""
+      );
+      console.log(response.data);
+      if (response.status === 200) {
+        setComponentTree(response.data);
+      }
+    };
+    fetchComponentTree();
+  }, []);
+
+  useEffect(() => console.log(componentTree), [componentTree]);
 
   return (
     <div className="container mx-auto pt-20">

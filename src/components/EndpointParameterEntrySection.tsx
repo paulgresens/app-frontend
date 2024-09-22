@@ -1,12 +1,11 @@
 import { twJoin } from "tailwind-merge";
-import { ENDPOINT_NAMES, Paths } from "../App";
+import { ENDPOINT_NAMES, paths, Paths } from "../App";
 
 import { useEffect, useState } from "react";
 import { Slider } from "./Slider";
 import { Button } from "./Button";
 import backend from "../backendApi";
 import { Input } from "./Input";
-import { isAxiosError } from "axios";
 
 const EndpointParameterEntrySection = ({
   method,
@@ -21,20 +20,38 @@ const EndpointParameterEntrySection = ({
   const [sliderState, setSliderState] = useState(1);
   const [textFieldState, setTextFieldState] = useState("");
 
+  useEffect(() => {
+    setSliderState(1);
+    setTextFieldState("");
+    setFetchedResponse(undefined);
+  }, [path]);
+
   return (
     <div className={twJoin("flex flex-col items-center", className)}>
       <div className="w-2/3 h-full flex flex-col justify-between">
         {(() => {
           switch (title) {
             case ENDPOINT_NAMES.TROLLING_CUSTOMERS:
+            case ENDPOINT_NAMES.TOP_PRODUCTS:
               return (
                 <div>
-                  <p>minimum average rating:</p>
+                  <p>
+                    {(() => {
+                      if (title === ENDPOINT_NAMES.TROLLING_CUSTOMERS) {
+                        return "minimum average rating: ";
+                      }
+                      return "limit: ";
+                    })()}
+                  </p>
                   <div className="flex flex-row gap-12">
                     <Slider
                       min={1}
-                      max={5}
-                      step={0.1}
+                      max={
+                        title === ENDPOINT_NAMES.TROLLING_CUSTOMERS ? 5 : 100
+                      }
+                      step={
+                        title === ENDPOINT_NAMES.TROLLING_CUSTOMERS ? 0.1 : 1
+                      }
                       onValueChange={(value) => {
                         setSliderState(value[0]);
                       }}
@@ -46,9 +63,28 @@ const EndpointParameterEntrySection = ({
               );
             case ENDPOINT_NAMES.PRODUCT_OFFERS:
             case ENDPOINT_NAMES.BY_PRODUCT_NUMBER:
+            case ENDPOINT_NAMES.BY_PATTERN:
+            case ENDPOINT_NAMES.BY_PATH:
+            case ENDPOINT_NAMES.SIMILAR_CHEAPER_PRODUCTS:
               return (
                 <div>
-                  <p>product number:</p>
+                  <p>
+                    {(() => {
+                      if (
+                        [
+                          ENDPOINT_NAMES.PRODUCT_OFFERS,
+                          ENDPOINT_NAMES.BY_PRODUCT_NUMBER,
+                          ENDPOINT_NAMES.SIMILAR_CHEAPER_PRODUCTS,
+                        ].includes(title)
+                      ) {
+                        return "product number:";
+                      }
+                      if (title === ENDPOINT_NAMES.BY_PATTERN) {
+                        return "pattern: ";
+                      }
+                      return 'path (enter with "/" as delimeter)';
+                    })()}
+                  </p>
                   <div className="flex flex-row gap-12">
                     <Input
                       className="text-neutral-800"
@@ -64,8 +100,11 @@ const EndpointParameterEntrySection = ({
           }
         })()}
         <Button
-          className="w-full"
+          className={`w-full ${
+            title === ENDPOINT_NAMES.CATEGORY_TREE ? "hidden" : ""
+          }`}
           onClick={async () => {
+            setFetchedResponse(undefined);
             let response: { data: any; status: number } | undefined;
             switch (title) {
               case ENDPOINT_NAMES.TROLLING_CUSTOMERS:
@@ -73,23 +112,37 @@ const EndpointParameterEntrySection = ({
                   path.replace("{minimumAverageRating}", sliderState.toString())
                 );
 
-                return;
+                break;
               case ENDPOINT_NAMES.BY_PRODUCT_NUMBER:
               case ENDPOINT_NAMES.PRODUCT_OFFERS:
+              case ENDPOINT_NAMES.SIMILAR_CHEAPER_PRODUCTS:
                 response = await backend.get(
                   path.replace(
                     "{productNumber}",
                     encodeURIComponent(textFieldState)
                   )
                 );
+                break;
+              case ENDPOINT_NAMES.BY_PATTERN:
+                response = await backend.get(path, {
+                  params: !!textFieldState.length
+                    ? { pattern: textFieldState }
+                    : {},
+                });
+                break;
+              case ENDPOINT_NAMES.BY_PATH:
+                response = await backend.get(
+                  path.replace("{path}", encodeURIComponent(textFieldState))
+                );
+                break;
+              case ENDPOINT_NAMES.TOP_PRODUCTS:
+                response = await backend.get(path, {
+                  params: { limit: sliderState },
+                });
+                break;
             }
 
-            console.log(
-              path.replace(
-                "{productNumber}",
-                encodeURIComponent(textFieldState)
-              )
-            );
+            console.log(response);
             setFetchedResponse({
               data: response?.data ?? {},
               status: response?.status ?? 500,
