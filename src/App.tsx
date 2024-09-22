@@ -96,7 +96,11 @@ export const paths: Paths = {
   },
 };
 
-let componentTreeResult = null;
+export type Category = {
+  name: string;
+  id: number;
+  subcategories: Category[];
+};
 
 function App() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<
@@ -106,7 +110,7 @@ function App() {
     { data: any; status: number } | undefined
   >(undefined);
 
-  const [componentTree, setComponentTree] = useState();
+  const [categoryTree, setCategoryTree] = useState<undefined | Category[]>();
 
   useEffect(
     () => console.log(JSON.stringify(fetchedResponse)),
@@ -114,25 +118,27 @@ function App() {
   );
 
   useEffect(() => {
-    if (componentTreeResult) {
-      setComponentTree(componentTreeResult);
+    if (categoryTree) {
       return;
     }
-    const fetchComponentTree = async () => {
+    const fetchCategoryTree = async () => {
       const response = await backend.get(
         paths["category"].endpoints.find(
           (endpoint) => endpoint.title === ENDPOINT_NAMES.CATEGORY_TREE
         )?.path ?? ""
       );
-      console.log(response.data);
+
       if (response.status === 200) {
-        setComponentTree(response.data);
+        setCategoryTree(
+          response.data["Category Tree"]["Root category"][0].subcategories
+        );
       }
     };
-    fetchComponentTree();
+    console.log("starting to fetch");
+    fetchCategoryTree();
   }, []);
 
-  useEffect(() => console.log(componentTree), [componentTree]);
+  useEffect(() => console.log(categoryTree), [categoryTree]);
 
   return (
     <div className="container mx-auto pt-20">
@@ -158,18 +164,26 @@ function App() {
           <div className="min-h-full min-w-[2px] rounded-md  bg-neutral-600" />
         </div>
         {selectedEndpoint && (
-          <div className="col-span-2 grid grid-cols-2 gap-4 h-full py-4">
-            <EndpointParameterEntrySection
-              method={selectedEndpoint.method}
-              path={selectedEndpoint.path}
-              title={selectedEndpoint.title}
-              setFetchedResponse={setFetchedResponse}
-            />
+          <div className="col-span-2 grid grid-cols-2 gap-2 h-full py-4">
+            {selectedEndpoint.title !== ENDPOINT_NAMES.CATEGORY_TREE && (
+              <EndpointParameterEntrySection
+                method={selectedEndpoint.method}
+                path={selectedEndpoint.path}
+                title={selectedEndpoint.title}
+                setFetchedResponse={setFetchedResponse}
+              />
+            )}
             <EndpointResultSection
+              className={
+                selectedEndpoint.title === ENDPOINT_NAMES.CATEGORY_TREE
+                  ? "col-span-2"
+                  : "col-span-1"
+              }
               method={selectedEndpoint.method}
               path={selectedEndpoint.path}
               title={selectedEndpoint.title}
               fetchedResponse={fetchedResponse}
+              categoryTree={categoryTree}
             />
           </div>
         )}

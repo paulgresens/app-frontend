@@ -132,7 +132,13 @@ const EndpointParameterEntrySection = ({
                 break;
               case ENDPOINT_NAMES.BY_PATH:
                 response = await backend.get(
-                  path.replace("{path}", encodeURIComponent(textFieldState))
+                  path.replace(
+                    "{path}",
+                    textFieldState
+                      .split("/")
+                      .map((value) => encodeURIComponent(value))
+                      .join("/")
+                  )
                 );
                 break;
               case ENDPOINT_NAMES.TOP_PRODUCTS:

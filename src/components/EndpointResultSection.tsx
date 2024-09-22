@@ -1,7 +1,24 @@
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { format } from "date-fns";
 import { twJoin } from "tailwind-merge";
-import { ENDPOINT_NAMES, Paths } from "../App";
+import { Category, ENDPOINT_NAMES, Paths } from "../App";
+import CategoryShower from "./CategoryShower";
+
+const renderCategoryTree = (
+  categories: Category[],
+  indent: string = ""
+): string => {
+  let result = "";
+
+  categories.forEach((category) => {
+    result += `${indent}${category.name}\n`;
+
+    if (category.subcategories.length > 0) {
+      result += renderCategoryTree(category.subcategories, indent + "  ");
+    }
+  });
+  return result;
+};
 
 const EndpointResultSection = ({
   method,
@@ -9,23 +26,27 @@ const EndpointResultSection = ({
   title,
   className = "",
   fetchedResponse,
+  categoryTree,
 }: Paths[string]["endpoints"][number] & {
   className?: string;
   fetchedResponse: { data: any; status: number } | undefined;
+  categoryTree: undefined | Category[];
 }) => {
   return (
     <div className={twJoin("flex flex-col items-center h-full", className)}>
       <div className="w-2/3 h-full flex flex-col justify-around ">
         {(() => {
-          console.log(fetchedResponse);
-          if (!fetchedResponse) {
+          if (!fetchedResponse && title !== ENDPOINT_NAMES.CATEGORY_TREE) {
             return;
           }
-          if (!fetchedResponse.data) {
+
+          if (
+            (!fetchedResponse?.data &&
+              title !== ENDPOINT_NAMES.CATEGORY_TREE) ||
+            (title === ENDPOINT_NAMES.CATEGORY_TREE && !categoryTree)
+          ) {
             return "LOADING";
           }
-          console.log(fetchedResponse.data);
-
           switch (title) {
             case ENDPOINT_NAMES.TROLLING_CUSTOMERS:
               return (
@@ -129,26 +150,34 @@ const EndpointResultSection = ({
               );
             case ENDPOINT_NAMES.BY_PATTERN:
             case ENDPOINT_NAMES.TOP_PRODUCTS:
+            case ENDPOINT_NAMES.BY_PATH:
               return (
                 <ScrollArea className="h-80 overflow-auto">
                   <div className="flex flex-col gap-1 ">
                     {!fetchedResponse?.data.products?.length
                       ? "no products found"
                       : fetchedResponse?.data.products.map((product) => (
-                          <div className="flex flex-col bg-neutral-800 rounded-sm p-1 mr-4">
-                            <div>{`title: ${
-                              !!product.title ? product.title : "unknown"
-                            } `}</div>
-                            <div>{`product number: ${
-                              !!product.productNumber
-                                ? product.productNumber
-                                : "unknown"
-                            } `}</div>
-                            <div>{`sales rank: ${
-                              !!product.salesrank
-                                ? product.salesrank
-                                : "unknown"
-                            } `}</div>
+                          <div className="flex flex-row bg-neutral-800 rounded-sm p-1 mr-4">
+                            <div className="flex flex-col">
+                              <div>{`title: ${
+                                !!product.title ? product.title : "unknown"
+                              } `}</div>
+                              <div>{`product number: ${
+                                !!product.productNumber
+                                  ? product.productNumber
+                                  : "unknown"
+                              } `}</div>
+                              <div>{`sales rank: ${
+                                !!product.salesrank
+                                  ? product.salesrank
+                                  : "unknown"
+                              } `}</div>
+                            </div>
+                            {!!product.image && (
+                              <div className="h-20 w-20">
+                                <img src={product.image}></img>
+                              </div>
+                            )}
                           </div>
                         ))}
                   </div>
@@ -172,6 +201,19 @@ const EndpointResultSection = ({
                   </div>
                 </ScrollArea>
               );
+            case ENDPOINT_NAMES.CATEGORY_TREE:
+              return (
+                <ScrollArea className="h-80 overflow-auto">
+                  {categoryTree?.map((category) => (
+                    <CategoryShower
+                      id={category.id}
+                      name={category.name}
+                      subcategories={category.subcategories}
+                    />
+                  ))}
+                </ScrollArea>
+              );
+
             default:
               return <></>;
           }
