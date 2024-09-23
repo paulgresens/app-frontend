@@ -6,6 +6,17 @@ import { Slider } from "./Slider";
 import { Button } from "./Button";
 import backend from "../backendApi";
 import { Input } from "./Input";
+import { Textarea } from "./Textarea";
+
+type reviewInsertParameters = {
+  customerId: number;
+  productNumber: string;
+  branchOfficeId: number;
+  productCondition: string;
+  rating: number;
+  description: string;
+  summary: string;
+};
 
 const EndpointParameterEntrySection = ({
   method,
@@ -87,21 +98,107 @@ const EndpointParameterEntrySection = ({
                   </p>
                   <div className="flex flex-row gap-12">
                     <Input
-                      className="text-neutral-800"
                       onChange={(e) => setTextFieldState(e.target.value)}
                       value={textFieldState}
                     ></Input>
                   </div>
                 </div>
               );
+            case ENDPOINT_NAMES.REVIEW:
+              return (
+                <div>
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const formObject = Object.fromEntries(formData);
+                      let transformedFormData = formObject;
 
+                      transformedFormData.customerId = Number(
+                        formObject.customerId
+                      );
+                      transformedFormData.branchOfficeId = Number(
+                        formObject.branchOfficeId
+                      );
+                      transformedFormData.rating = Number(formObject.rating);
+                      console.log(JSON.stringify(transformedFormData));
+                      const { data, status } = await backend.post(
+                        path,
+                        transformedFormData,
+                        {
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                        }
+                      );
+                      console.log("status", status);
+                      console.log("data: ", data);
+                      setFetchedResponse({ data: data ?? {}, status });
+                    }}
+                  >
+                    <div className="grid grid-cols-2 gap-1 pb-1">
+                      <>
+                        <div className="flex flex-col">
+                          customer id:
+                          <Input
+                            name="customerId"
+                            id="customerId"
+                            type="number"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          branch office id:
+                          <Input
+                            name="branchOfficeId"
+                            id="branchOfficeId"
+                            type="number"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          rating:
+                          <Input name="rating" id="rating" type="number" />
+                        </div>
+                      </>
+                      <>
+                        <div className="flex flex-col">
+                          product number:
+                          <Input
+                            name="productNumber"
+                            id="productNumber"
+                            type="text"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          condition:
+                          <Input
+                            name="productCondition"
+                            id="productCondition"
+                            type="text"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          summary:
+                          <Input name="summary" id="summary" type="text" />
+                        </div>
+                      </>
+                    </div>
+                    <div className="flex flex-col">
+                      description:
+                      <Textarea name="description" id="description" />
+                      <Button type="submit" className="mt-1">
+                        add review
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              );
             default:
               return <></>;
           }
         })()}
         <Button
           className={`w-full ${
-            title === ENDPOINT_NAMES.CATEGORY_TREE ? "hidden" : ""
+            title === ENDPOINT_NAMES.REVIEW ? "hidden" : ""
           }`}
           onClick={async () => {
             setFetchedResponse(undefined);
@@ -109,7 +206,10 @@ const EndpointParameterEntrySection = ({
             switch (title) {
               case ENDPOINT_NAMES.TROLLING_CUSTOMERS:
                 response = await backend.get(
-                  path.replace("{minimumAverageRating}", sliderState.toString())
+                  path.replace(
+                    "{minimumAverageRating}",
+                    (sliderState ?? 1).toString()
+                  )
                 );
 
                 break;
@@ -143,7 +243,7 @@ const EndpointParameterEntrySection = ({
                 break;
               case ENDPOINT_NAMES.TOP_PRODUCTS:
                 response = await backend.get(path, {
-                  params: { limit: sliderState },
+                  params: { limit: sliderState ?? 1 },
                 });
                 break;
             }

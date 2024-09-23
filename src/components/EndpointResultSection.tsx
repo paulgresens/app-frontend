@@ -39,34 +39,37 @@ const EndpointResultSection = ({
           if (!fetchedResponse && title !== ENDPOINT_NAMES.CATEGORY_TREE) {
             return;
           }
-
-          if (
-            (!fetchedResponse?.data &&
-              title !== ENDPOINT_NAMES.CATEGORY_TREE) ||
-            (title === ENDPOINT_NAMES.CATEGORY_TREE && !categoryTree)
-          ) {
-            return "LOADING";
+          if (!(title === ENDPOINT_NAMES.REVIEW && fetchedResponse?.status)) {
+            if (
+              (!fetchedResponse?.data &&
+                title !== ENDPOINT_NAMES.CATEGORY_TREE) ||
+              (title === ENDPOINT_NAMES.CATEGORY_TREE && !categoryTree)
+            ) {
+              return "LOADING";
+            }
           }
           switch (title) {
             case ENDPOINT_NAMES.TROLLING_CUSTOMERS:
               return (
                 <ScrollArea className="h-80 overflow-auto">
                   <div className="flex flex-col gap-1 ">
-                    {fetchedResponse?.data.map((customer) => (
-                      <div className="flex flex-col bg-neutral-800 rounded-sm p-1 mr-4">
-                        <div>{`${customer.username} (${customer.customerId})`}</div>
-                        <div>{`street: ${
-                          !!customer.street ? customer.street : "unknown"
-                        }, zip: ${
-                          !!customer.zip ? customer.zip : "unknown"
-                        }`}</div>
-                        <div>{`bank account number: ${
-                          !!customer.bankAccountNumber
-                            ? customer.bankAccountNumber
-                            : "unknown"
-                        }`}</div>
-                      </div>
-                    ))}
+                    {!fetchedResponse?.data.customers?.length
+                      ? "no trolling customers found"
+                      : fetchedResponse?.data.customers.map((customer) => (
+                          <div className="flex flex-col bg-neutral-800 rounded-sm p-1 mr-4">
+                            <div>{`${customer.username} (${customer.customerId})`}</div>
+                            <div>{`street: ${
+                              !!customer.street ? customer.street : "unknown"
+                            }, zip: ${
+                              !!customer.zip ? customer.zip : "unknown"
+                            }`}</div>
+                            <div>{`bank account number: ${
+                              !!customer.bankAccountNumber
+                                ? customer.bankAccountNumber
+                                : "unknown"
+                            }`}</div>
+                          </div>
+                        ))}
                   </div>
                 </ScrollArea>
               );
@@ -213,7 +216,23 @@ const EndpointResultSection = ({
                   ))}
                 </ScrollArea>
               );
-
+            case ENDPOINT_NAMES.REVIEW:
+              return (
+                <div>
+                  {(() => {
+                    switch (fetchedResponse?.status) {
+                      case 201:
+                        return "review added successfully";
+                      case 409:
+                        return "review does already exist";
+                      case 400:
+                        return "invalid input";
+                      default:
+                        return "could not insert review";
+                    }
+                  })()}
+                </div>
+              );
             default:
               return <></>;
           }
