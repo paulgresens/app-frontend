@@ -158,7 +158,10 @@ const EndpointResultSection = ({
                 <ScrollArea className="h-80 overflow-auto">
                   <div className="flex flex-col gap-1 ">
                     {!fetchedResponse?.data.products?.length
-                      ? "no products found"
+                      ? fetchedResponse?.status === 404 &&
+                        title === ENDPOINT_NAMES.BY_PATH
+                        ? "invalid path"
+                        : "no products found"
                       : fetchedResponse?.data.products.map((product) => (
                           <div className="flex flex-row bg-neutral-800 rounded-sm p-1 mr-4">
                             <div className="flex flex-col">

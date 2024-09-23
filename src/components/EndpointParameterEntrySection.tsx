@@ -200,6 +200,15 @@ const EndpointParameterEntrySection = ({
           className={`w-full ${
             title === ENDPOINT_NAMES.REVIEW ? "hidden" : ""
           }`}
+          disabled={
+            !textFieldState.length &&
+            [
+              ENDPOINT_NAMES.BY_PRODUCT_NUMBER,
+              ENDPOINT_NAMES.BY_PATH,
+              ENDPOINT_NAMES.SIMILAR_CHEAPER_PRODUCTS,
+              ENDPOINT_NAMES.PRODUCT_OFFERS,
+            ].includes(title)
+          }
           onClick={async () => {
             setFetchedResponse(undefined);
             let response: { data: any; status: number } | undefined;
